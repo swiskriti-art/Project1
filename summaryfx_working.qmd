@@ -1,0 +1,9 @@
+---
+title: "summaryfx_working"
+format: html
+editor: visual
+---
+
+# summary fx
+
+here is where I will document progress toward summary functions
