@@ -1,0 +1,46 @@
+---
+title: "API"
+format: html
+editor: visual
+---
+
+## Getting PUMS data using API
+
+loading library
+
+```{r}
+library(httr)
+library(jsonlite)
+
+```
+
+Helper function to parse the return data from *Get* of a URL
+```{r}
+# url is the fully formed url
+get_url_data <- function(url){
+  data <- httr::GET(url)
+  str(data)
+  #parsed <- fromJSON
+  
+  
+  
+}
+
+
+
+```
+
+```{r}
+#num_vars: Numerical variable to be return 
+# cat_vars: categorical variable to be return
+get_data <- function(year=2022, num_vars, cat_vars=C("sex"),geography="all",){
+  if (year < 2010 | year >2022) {
+    stop ("year needs to be 2010-2022")
+  }
+  
+  URL <- paste("https://api.census.gov/data/", year,"acs/acs1/pums", sep="/")
+ 
+  #https://api.census.gov/data/2022/acs/acs1/pums?get=SEX,PWGTP,MAR&for=region:*&SCHL=
+}
+
+```
