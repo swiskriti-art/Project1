@@ -11,25 +11,24 @@ loading library
 ```{r}
 library(httr)
 library(jsonlite)
+library(tidyverse)
 
 ```
 
 Helper function to parse the return data from *Get* of a URL
 ```{r}
-# url is the fully formed url
+# Function to get the data from a url
+# url should contain all the parameters 
 get_url_data <- function(url){
   data <- httr::GET(url)
-  str(data)
-  #parsed <- fromJSON
-  
-  
-  
+  parsed <- fromJSON(rawToChar(data$content))
+  # parsed data(matrix) has column names in the fist row extract that row use it as column name of the parsed data
+  dimnames(parsed)[[2]] <- parsed[1,]
+  #except first row taking the rest of rows of prased data (matrix) and turn into a tibble
+  data_tbl <- as_tibble(parsed[2:nrow(parsed),])
 }
-
-
-
 ```
-
+Function to query PUMS API
 ```{r}
 #num_vars: Numerical variable to be return 
 # cat_vars: categorical variable to be return
