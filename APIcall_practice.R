@@ -2,6 +2,7 @@ library(tidycensus)
 library(httr)
 library(dplyr)
 library(tidyr)
+library(tidyverse)
 library(jsonlite)
 
 
@@ -17,9 +18,22 @@ household_division <- get_acs(variables = households,
 ) 
 
 
-# build sample call with httr method
-URL_id <- "https://api.census.gov/data/2022/acs/acs1/pums?get=SEX,PWGTP,MAR&for=public%20use%20microdata%20area:*&in=state:01&SCHL=24"
+# call sample call with httr method and manipulate
+#year22
+data_yr22 <- "https://api.census.gov/data/2022/acs/acs1/pums?get=SEX,PWGTP,MAR&for=public%20use%20microdata%20area:*&in=state:01&SCHL=24"
 
-census_data <- httr::GET(URL_id)
-census_tib <- as_tibble(parsed)
-str(census_tib)
+census_data_yr22 <- httr::GET(data_yr22)
+census_parse_yr22 <- fromJSON(rawToChar(census_data_yr22$content))
+
+str(census_parse_yr22)
+census_parse_yr22[1,1:6]
+
+#year21 - just changing year in URL
+data_yr21 <- "https://api.census.gov/data/2021/acs/acs1/pums?get=SEX,PWGTP,MAR&for=public%20use%20microdata%20area:*&in=state:01&SCHL=24"
+
+census_data_yr21 <- httr::GET(data_yr21)
+census_parse_yr21 <- fromJSON(rawToChar(census_data_yr21$content))
+
+str(census_parse_yr21)
+census_parse_yr21[1,1:6]
+
