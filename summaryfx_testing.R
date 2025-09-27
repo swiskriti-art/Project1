@@ -28,9 +28,6 @@ summaryfx <- function(tib, numvars = c("num1","num2","num3"), charvars = c("yr",
     stop("Tibble is not in a Census Class")
   }
   
-  if(length(charvars) == 3){
-    charvarsvector <- 
-  }
 
 
 # Comment out loop - don't need it
