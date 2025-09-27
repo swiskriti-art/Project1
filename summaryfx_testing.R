@@ -30,10 +30,10 @@ summaryfx <- function(tib, numvars = c("num1","num2","num3")){
   
   #numvars <- stringr::str_replace_all(numvars,"num","")
 
-  for (clmn in numvars){
+#  for (clmn in numvars){
     means = sapply(tib[,numvars],mean)
     stddev = sapply(tib[,numvars],sd)
-  }
+#  }
  #prepare result list
   names(means) <- paste0(names(means)," mean")
   print(means)
