@@ -22,17 +22,25 @@ class(tib) <- c("census", class(tib))
 # function to produce mean and sd for numeric vars & counts for categorial
 # take three arguments: class, num variables, and categorial variables
 
-summaryfx <- function(tib, numvars = c("num1","num2","num3")){
+summaryfx <- function(tib, numvars = c("num1","num2","num3"), charvars = c("yr","letter","key")){
   #check tibble class contains "census"
   if(!("census" %in% class(tib))){
     stop("Tibble is not in a Census Class")
   }
   
-  #numvars <- stringr::str_replace_all(numvars,"num","")
+  if(length(charvars) == 3){
+    charvarsvector <- 
+  }
 
+
+# Comment out loop - don't need it
 #  for (clmn in numvars){
     means = sapply(tib[,numvars],mean)
     stddev = sapply(tib[,numvars],sd)
+    
+# can we use table or summarise?
+# don't want to create multiway contingency tables
+    count = table(tib)
 #  }
  #prepare result list
   names(means) <- paste0(names(means)," mean")
@@ -40,11 +48,16 @@ summaryfx <- function(tib, numvars = c("num1","num2","num3")){
   
   names(stddev) <- paste0(names(stddev)," StdDev")
   print(stddev)
+  
+  names(count) <- paste0(names(count)," n=")
+  print(count)
 }
 
 summaryfx(tib)
 
-summaryfx(tib, numvars = "num3")
+summaryfx(tib, numvars = "num3", charvars = "key")
+
+summaryfx(tib, charvars = "key")
 
 
 
