@@ -15,7 +15,8 @@ library(tidyverse)
 
 ```
 
-Helper function to parse the return data from *Get* of a URL
+Helper function to parse the return data from `Get` of a URL
+
 ```{r}
 # Function to get the data from a url
 # url should contain all the parameters 
@@ -28,17 +29,45 @@ get_url_data <- function(url){
   data_tbl <- as_tibble(parsed[2:nrow(parsed),])
 }
 ```
-Function to query PUMS API
+
+Function to query PUMS API,
+
 ```{r}
 #num_vars: Numerical variable to be return 
 # cat_vars: categorical variable to be return
-get_data <- function(year=2022, num_vars, cat_vars=C("sex"),geography="all",){
-  if (year < 2010 | year >2022) {
+get_data <- function(year=2022, num_vars= c("PWGTP", "AGEP"),
+                     cat_vars = c("SEX"), geo = "All", geo_filter = ""){
+  if (year < 2010 | year > 2022) {
     stop ("year needs to be 2010-2022")
-  }
+  } 
+  allowed_num <- c("PWGTP", "AGEP", "GASP", "GRPIP","JWAP", "JWDP", "JWMNP")
+  allowed_cat <- c("FER", "HHL","HISPEED", "JWTRNS", "SCH", "SEX")
   
-  URL <- paste("https://api.census.gov/data/", year,"acs/acs1/pums", sep="/")
- 
+  diff <- setdiff(num_vars, allowed_num)
+  if(length(diff) > 0){
+    stop ("unknown variable(s) given in num_vars: ", diff)
+  }
+  diff <- setdiff(cat_vars, allowed_cat)
+  if (length(diff) > 0){
+    stop ("unknown variable(s) given in cat_vars: ", diff) 
+  }
+  if (!(geo %in% c("All", "Region", "Division"))){
+    stop ("unknown geo value given")
+  }
+  # Add PWGTP if not present in num_vars
+  if(!( "PWGTP" %in% num_vars)) {
+    num_vars <- c("PWGPT", num_vars)
+  }
+  get_str <- paste0("pums?get=",
+                   paste(num_vars, collapse = ","),
+                   ",",
+                   paste(cat_vars, collapse = ","))
+  URL <- paste("https://api.census.gov/data", year,
+               "acs/acs1", get_str,
+               sep = "/",
+               collapse="/")
+  print(URL)
+  tbl <- get_url_data(URL)
   #https://api.census.gov/data/2022/acs/acs1/pums?get=SEX,PWGTP,MAR&for=region:*&SCHL=
 }
 
