@@ -36,9 +36,14 @@ sex_factor <- list(levels = c("1", "2"),
 fer_factor <- list(levels = c("0","1", "2"), 
                    labels = c("N/A", "Yes", "No"))
 hhl_factor <- list(levels = c("0", "1", "2", "3", "4", "5"), 
-                   labels = c("N/A (GQ/vacant)"),"English Only","Spanish","Other Indo-European languages","Asian and Pacific Island languages","Other Language")
+                   labels = c("N/A (GQ/vacant)",
+                              "English Only",
+                              "Spanish",
+                              "Other Indo-European languages",
+                              "Asian and Pacific Island languages","Other Language"))
 hispeed_factor <- list(levels = c("0","1", "2"), 
-                       labels = c("N/A (GQ/vacant/no paid access to the internet)","Yes","No"))
+                       labels = c("N/A (GQ/vacant/no paid access to the internet)",
+                                  "Yes","No"))
 jwtrns_factor <- list(levels = c("0","01","02","03","04","05","06","07","08", "09", "10", "11"),
                        labels = c("N/A", "Car, truck, or van", "Bus", 
                                   "Subway or elevated rail",
@@ -76,7 +81,7 @@ schl_factor <- list(levels = c("16",
                               "05",
                               "11",
                               "18",
-                              "09",),
+                              "09"),
                     labels = c("Regular high school diploma",
                               "No schooling completed",
                               "Grade 1",
@@ -147,17 +152,29 @@ get_data <- function(year=2022, num_vars= c("PWGTP", "AGEP"),
   print(URL)
   tbl <- get_url_data(URL)
   #https://api.census.gov/data/2022/acs/acs1/pums?get=SEX,PWGTP,MAR&for=region:*&SCHL=
-  tbl |>
-    mutate
-  
-  
+  for(ct in cat_vars) {
+    fac <- switch(ct,
+           "SEX" = sex_factor,
+           "FER" = fer_factor,
+           "HHL" = hhl_factor,
+           "HISPEED"= hispeed_factor,
+           "JWTRNS" = jwtrns_factor,
+           "SCH" = sch_factor,
+           "SCHL" = schl_factor)
+    colNm <- paste0(ct, "_fac")
+    print(fac)
+    # For get column names from a variable need to use !! and !!sym() for use inside factor
+    tbl <- tbl |>
+      mutate(!!colNm := factor(!!sym(ct), levels = fac$levels, labels = fac$labels))
+  }
+  return(tbl)
 }
 
 ```
 Getting the data
 ```{r}
 dt_tbl <- get_data(num_vars = c("PWGTP", "GASP", "JWAP"), cat_vars = c("SEX","FER", "HHL"),
-                   geo = "Region")
+                   geo = "State", geo_filter = "01")
 dt_tbl
 ```
 
