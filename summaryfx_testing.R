@@ -29,7 +29,6 @@ summaryfx <- function(tib, numvars = c("num1","num2","num3"), charvars = c("yr",
   }
   
 
-
 # Comment out loop - don't need it
 #  for (clmn in numvars){
     means = sapply(tib[,numvars],mean)
