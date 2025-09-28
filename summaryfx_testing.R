@@ -33,10 +33,12 @@ summaryfx <- function(tib, numvars = c("num1","num2","num3"), charvars = c("yr",
     
  #prepare result list
   names(means) <- paste0(names(means)," mean")
-  print(means)
-  
   names(stddev) <- paste0(names(stddev)," StdDev")
-  print(stddev)
+  numlist <- list(means,stddev)
+  print("Numeric Variable Summaries")
+  print(numlist)
+
+  print("Character Variable Summaries")
   # passing [,charvars] creates multi-way contingency tables - using for loop to create multiple one-way  
   for (i in charvars){
     count = table(tib[,i])
