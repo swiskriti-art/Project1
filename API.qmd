@@ -16,7 +16,6 @@ library(tidyverse)
 ```
 
 Helper function to parse the return data from `Get` of a URL
-
 ```{r}
 # Function to get the data from a url
 # url should contain all the parameters 
@@ -30,18 +29,92 @@ get_url_data <- function(url){
 }
 ```
 
-Function to query PUMS API,
+Create factors for categorical variables
+```{r}
+sex_factor <- list(levels = c("1", "2"),
+                   labels = c("Male", "Female"))
+fer_factor <- list(levels = c("0","1", "2"), 
+                   labels = c("N/A", "Yes", "No"))
+hhl_factor <- list(levels = c("0", "1", "2", "3", "4", "5"), 
+                   labels = c("N/A (GQ/vacant)"),"English Only","Spanish","Other Indo-European languages","Asian and Pacific Island languages","Other Language")
+hispeed_factor <- list(levels = c("0","1", "2"), 
+                       labels = c("N/A (GQ/vacant/no paid access to the internet)","Yes","No"))
+jwtrns_factor <- list(levels = c("0","01","02","03","04","05","06","07","08", "09", "10", "11"),
+                       labels = c("N/A", "Car, truck, or van", "Bus", 
+                                  "Subway or elevated rail",
+                                  "Long-distance train or commuter rail",
+                                  "Light rail, streetcar, or trolley",
+                                  "Ferryboat", "Taxicab",
+                                  "Motorcycle", "Bicycle", "Walked", "Worked from home",
+                                  "Other method"))
+sch_factor <- list(levels = c("0", "1", "2", "3"),
+                   labels = c("N/A (less than 3 years old)",
+                              "No, has not attended in the last 3 months",
+                              "Yes, public school or public college",
+                              "Yes, private school or college or home school"))
+schl_factor <- list(levels = c("16",
+                              "01",
+                              "04",
+                              "03",
+                              "07",
+                              "23",
+                              "19",
+                              "22",
+                              "10",
+                              "20",
+                              "0", 
+                              "02",
+                              "21",
+                              "08",
+                              "24",
+                              "06",
+                              "14",
+                              "17",
+                              "12",
+                              "15",
+                              "13",
+                              "05",
+                              "11",
+                              "18",
+                              "09",),
+                    labels = c("Regular high school diploma",
+                              "No schooling completed",
+                              "Grade 1",
+                              "Kindergarten",
+                              "Grade 4",
+                              "Professional degree beyond a bachelor's degree",
+                              "1 or more years of college credit, no degree",
+                              "Master's degree",
+                              "Grade 7",
+                              "Associate's degree",
+                              "N/A (less than 3 years old)",
+                              "Nursery school, preschool",
+                              "Bachelor's degree",
+                              "Grade 5",
+                              "Doctorate degree",
+                              "Grade 3",
+                              "Grade 11",
+                              "GED or alternative credential",
+                              "Grade 9",
+                              "12th grade - no diploma",
+                              "Grade 10",
+                              "Grade 2",
+                              "Grade 8",
+                              "Some college, but less than 1 year",
+                              "Grade 6"))
+```
 
+Function to query PUMS API,
 ```{r}
 #num_vars: Numerical variable to be return 
 # cat_vars: categorical variable to be return
 get_data <- function(year=2022, num_vars= c("PWGTP", "AGEP"),
-                     cat_vars = c("SEX"), geo = "All", geo_filter = ""){
+                     cat_vars = c("SEX"), geo = "All", geo_filter = "*"){
   if (year < 2010 | year > 2022) {
     stop ("year needs to be 2010-2022")
   } 
   allowed_num <- c("PWGTP", "AGEP", "GASP", "GRPIP","JWAP", "JWDP", "JWMNP")
-  allowed_cat <- c("FER", "HHL","HISPEED", "JWTRNS", "SCH", "SEX")
+  allowed_cat <- c("FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL", "SEX")
   
   diff <- setdiff(num_vars, allowed_num)
   if(length(diff) > 0){
@@ -51,17 +124,22 @@ get_data <- function(year=2022, num_vars= c("PWGTP", "AGEP"),
   if (length(diff) > 0){
     stop ("unknown variable(s) given in cat_vars: ", diff) 
   }
-  if (!(geo %in% c("All", "Region", "Division"))){
-    stop ("unknown geo value given")
+  if (!(geo %in% c("All", "Region", "Division", "State"))){
+    stop ("unknown geo value given: ", geo)
   }
   # Add PWGTP if not present in num_vars
   if(!( "PWGTP" %in% num_vars)) {
     num_vars <- c("PWGPT", num_vars)
   }
+  get_str <- ""
+  if (geo != "All"){
+    geo_str <- paste0("&for=", geo, ":", geo_filter)
+  }
   get_str <- paste0("pums?get=",
                    paste(num_vars, collapse = ","),
                    ",",
-                   paste(cat_vars, collapse = ","))
+                   paste(cat_vars, collapse = ","),
+                   geo_str)
   URL <- paste("https://api.census.gov/data", year,
                "acs/acs1", get_str,
                sep = "/",
@@ -69,6 +147,17 @@ get_data <- function(year=2022, num_vars= c("PWGTP", "AGEP"),
   print(URL)
   tbl <- get_url_data(URL)
   #https://api.census.gov/data/2022/acs/acs1/pums?get=SEX,PWGTP,MAR&for=region:*&SCHL=
+  tbl |>
+    mutate
+  
+  
 }
 
 ```
+Getting the data
+```{r}
+dt_tbl <- get_data(num_vars = c("PWGTP", "GASP", "JWAP"), cat_vars = c("SEX","FER", "HHL"),
+                   geo = "Region")
+dt_tbl
+```
+
