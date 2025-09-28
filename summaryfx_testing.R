@@ -28,30 +28,26 @@ summaryfx <- function(tib, numvars = c("num1","num2","num3"), charvars = c("yr",
     stop("Tibble is not in a Census Class")
   }
   
-
-# Comment out loop - don't need it
-#  for (clmn in numvars){
     means = sapply(tib[,numvars],mean)
     stddev = sapply(tib[,numvars],sd)
     
-# can we use table or summarise?
-# don't want to create multiway contingency tables
-    count = table(tib)
-#  }
  #prepare result list
   names(means) <- paste0(names(means)," mean")
   print(means)
   
   names(stddev) <- paste0(names(stddev)," StdDev")
   print(stddev)
-  
-  names(count) <- paste0(names(count)," n=")
-  print(count)
+  # passing [,charvars] creates multi-way contingency tables - using for loop to create multiple one-way  
+  for (i in charvars){
+    count = table(tib[,i])
+    names(count) <- paste0(names(count)," n=")
+    print(count)
+  }
 }
 
 summaryfx(tib)
 
-summaryfx(tib, numvars = "num3", charvars = "key")
+summaryfx(tib, numvars = "num3", charvars = "yr")
 
 summaryfx(tib, charvars = "key")
 
