@@ -1,0 +1,240 @@
+---
+title: "API"
+format: html
+editor: visual
+---
+
+## Getting PUMS data using API
+
+# loading library
+
+```{r}
+library(httr)
+library(jsonlite)
+library(tidyverse)
+library(stringr)
+
+```
+
+# Helper function to parse the return data from `Get` of a URL
+```{r}
+# Function to get the data from a url
+# url should contain all the parameters 
+get_url_data <- function(url){
+  data <- httr::GET(url)
+  parsed <- fromJSON(rawToChar(data$content))
+  # parsed data(matrix) has column names in the fist row extract that row use it as column name of the parsed data
+  dimnames(parsed)[[2]] <- parsed[1,]
+  #except first row taking the rest of rows of prased data (matrix) and turn into a tibble
+  data_tbl <- as_tibble(parsed[2:nrow(parsed),])
+}
+```
+
+# Create factors for categorical variables
+```{r}
+sex_factor <- list(levels = c("1", "2"),
+                   labels = c("Male", "Female"))
+fer_factor <- list(levels = c("0","1", "2"), 
+                   labels = c("N/A", "Yes", "No"))
+hhl_factor <- list(levels = c("0", "1", "2", "3", "4", "5"), 
+                   labels = c("N/A (GQ/vacant)",
+                              "English Only",
+                              "Spanish",
+                              "Other Indo-European languages",
+                              "Asian and Pacific Island languages","Other Language"))
+hispeed_factor <- list(levels = c("0","1", "2"), 
+                       labels = c("N/A (GQ/vacant/no paid access to the internet)",
+                                  "Yes","No"))
+jwtrns_factor <- list(levels = c("0","01","02","03","04","05","06","07","08", "09", "10", "11"),
+                       labels = c("N/A", "Car, truck, or van", "Bus", 
+                                  "Subway or elevated rail",
+                                  "Long-distance train or commuter rail",
+                                  "Light rail, streetcar, or trolley",
+                                  "Ferryboat", "Taxicab",
+                                  "Motorcycle", "Bicycle", "Walked", "Worked from home",
+                                  "Other method"))
+sch_factor <- list(levels = c("0", "1", "2", "3"),
+                   labels = c("N/A (less than 3 years old)",
+                              "No, has not attended in the last 3 months",
+                              "Yes, public school or public college",
+                              "Yes, private school or college or home school"))
+schl_factor <- list(levels = c("16",
+                              "01",
+                              "04",
+                              "03",
+                              "07",
+                              "23",
+                              "19",
+                              "22",
+                              "10",
+                              "20",
+                              "0", 
+                              "02",
+                              "21",
+                              "08",
+                              "24",
+                              "06",
+                              "14",
+                              "17",
+                              "12",
+                              "15",
+                              "13",
+                              "05",
+                              "11",
+                              "18",
+                              "09"),
+                    labels = c("Regular high school diploma",
+                              "No schooling completed",
+                              "Grade 1",
+                              "Kindergarten",
+                              "Grade 4",
+                              "Professional degree beyond a bachelor's degree",
+                              "1 or more years of college credit, no degree",
+                              "Master's degree",
+                              "Grade 7",
+                              "Associate's degree",
+                              "N/A (less than 3 years old)",
+                              "Nursery school, preschool",
+                              "Bachelor's degree",
+                              "Grade 5",
+                              "Doctorate degree",
+                              "Grade 3",
+                              "Grade 11",
+                              "GED or alternative credential",
+                              "Grade 9",
+                              "12th grade - no diploma",
+                              "Grade 10",
+                              "Grade 2",
+                              "Grade 8",
+                              "Some college, but less than 1 year",
+                              "Grade 6"))
+```
+
+# Function to query PUMS API,
+```{r}
+#num_vars: Numerical variable to be return 
+# cat_vars: categorical variable to be return
+get_data <- function(year=2022, num_vars= c("PWGTP", "AGEP"),
+                     cat_vars = c("SEX"), geo = "All", geo_filter = "*"){
+  if (year < 2010 | year > 2022) {
+    stop ("year needs to be 2010-2022")
+  } 
+  allowed_num <- c("PWGTP", "AGEP", "GASP", "GRPIP","JWAP", "JWDP", "JWMNP")
+  allowed_cat <- c("FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL", "SEX")
+  
+  diff <- setdiff(num_vars, allowed_num)
+  if(length(diff) > 0){
+    stop ("unknown variable(s) given in num_vars: ", diff)
+  }
+  diff <- setdiff(cat_vars, allowed_cat)
+  if (length(diff) > 0){
+    stop ("unknown variable(s) given in cat_vars: ", diff) 
+  }
+  if (!(geo %in% c("All", "Region", "Division", "State"))){
+    stop ("unknown geo value given: ", geo)
+  }
+  # Add PWGTP if not present in num_vars
+  if(!( "PWGTP" %in% num_vars)) {
+    num_vars <- c("PWGPT", num_vars)
+  }
+  get_str <- ""
+  if (geo != "All"){
+    geo_str <- paste0("&for=", geo, ":", geo_filter)
+  }
+  get_str <- paste0("pums?get=",
+                   paste(num_vars, collapse = ","),
+                   ",",
+                   paste(cat_vars, collapse = ","),
+                   geo_str)
+  URL <- paste("https://api.census.gov/data", year,
+               "acs/acs1", get_str,
+               sep = "/",
+               collapse="/")
+  print(URL)
+  tbl <- get_url_data(URL)
+  #https://api.census.gov/data/2022/acs/acs1/pums?get=SEX,PWGTP,MAR&for=region:*&SCHL=
+  for(ct in cat_vars) {
+    fac <- switch(ct,
+           "SEX" = sex_factor,
+           "FER" = fer_factor,
+           "HHL" = hhl_factor,
+           "HISPEED"= hispeed_factor,
+           "JWTRNS" = jwtrns_factor,
+           "SCH" = sch_factor,
+           "SCHL" = schl_factor)
+    colNm <- paste0(ct, "_fac")
+    print(fac)
+    # For get column names from a variable need to use !! and !!sym() for use inside factor
+    tbl <- tbl |>
+      mutate(!!colNm := factor(!!sym(ct), levels = fac$levels, labels = fac$labels))
+  }
+  return(tbl)
+}
+
+```
+# Getting the data
+```{r}
+dt_tbl <- get_data(num_vars = c("PWGTP", "GASP", "JWAP"), cat_vars = c("SEX","FER", "HHL"),
+                   geo = "State", geo_filter = "01")
+dt_tbl
+```
+
+
+# Remove Duplicates 
+```{r}
+#distinct drops dataset from 51.5k to 28.2k records
+dt_tbl_dist <- distinct(dt_tbl)
+```
+
+# Apply Census Class
+```{r}
+class(dt_tbl_dist) <- c("census", class(dt_tbl_dist))
+```
+
+
+# Summary Function
+```{r}
+#create alias tib
+tib <- dt_tbl_dist
+tib$PWGTP <- as.numeric(tib$PWGTP)
+tib$GASP <- as.numeric(tib$GASP)
+tib$JWAP <- as.numeric(tib$JWAP)
+tib$FER <- as.numeric(tib$FER)
+
+#temporary hardcode of weighted columns -- change to loop later
+tib$GASP_wgt <- tib$GASP * tib$PWGTP
+tib$JWAP_wgt <- tib$JWAP * tib$PWGTP
+tib$FER_wgt <- tib$FER * tib$PWGTP
+
+
+summaryfx <- function(tib, numvars = c("GASP","JWAP","FER"), charvars = c("SEX_fac","HHL_fac","FER_fac")){
+  #check tibble class contains "census"
+  if(!("census" %in% class(tib))){
+    stop("Tibble is not in a Census Class")
+  }
+  
+    #sum across weighted values then divide by total weight
+    wgtavg = sapply(tib[,paste0(numvars,"_wgt")],sum)/sum(tib$PWGTP)
+    
+                      
+    names(wgtavg) <- str_replace(paste0(names(wgtavg)," Mean"),"_wgt","")
+    numlist <- list(wgtavg)
+    print("Numeric Variable Summaries") 
+    print(numlist)
+
+}
+
+summaryfx(tib)
+summaryfx(tib, numvars = c("GASP","JWAP"))
+
+#summaryfx(tib, charvars = "key")
+
+```
+
+
+
+
+
+
+
+
