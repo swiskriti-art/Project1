@@ -225,18 +225,28 @@ summaryfx <- function(tib, numvars = c("GASP","JWAP","FER"), charvars = c("SEX_f
     num = sapply(tib[,paste0(numvars,"_sqwgt")],sum)
     stddev = sqrt(num/dnm)
     
-    
-                      
     names(wgtavg) <- str_replace(paste0(names(wgtavg)," Mean"),"_wgt","")
     names(stddev) <- str_replace(paste0(names(stddev)," StdDev"),"_sqwgt","")
     numlist <- list(wgtavg, stddev)
     print("Numeric Variable Summaries") 
     print(numlist)
     
+    
+    # passing [,charvars] creates multi-way contingency tables - using for loop to create multiple one-way 
+    for (i in charvars){
+    catsum <- tib |>
+              group_by(tib[,i]) |>
+              summarise(
+                count = sum(PWGTP)
+                        ) 
+    print(catsum)
+  }
+    
+    
 }
 
 summaryfx(tib)
-summaryfx(tib, numvars = c("GASP","JWAP"))
+#summaryfx(tib, numvars = c("GASP","JWAP"))
 
 #summaryfx(tib, charvars = "key")
 
