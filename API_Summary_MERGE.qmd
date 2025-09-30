@@ -234,16 +234,16 @@ summaryfx <- function(tib, numvars = c("GASP","JWAP","FER"), charvars = c("SEX_f
     print(numlist)
     
     
+    #observation counts
     # passing [,charvars] creates multi-way contingency tables - using for loop to create multiple one-way 
-    catsumry <- list()
     for (i in charvars){
-    print( tib |>
+    countsum <-  tib |>
               group_by(tib[,i]) |>
               summarise(
                 count = sum(PWGTP)
                         )
-    )
-  }
+    print(countsum)
+    }
 }
 
 summaryfx(tib)
