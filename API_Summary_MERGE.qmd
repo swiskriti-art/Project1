@@ -14,6 +14,7 @@ library(jsonlite)
 library(tidyverse)
 library(stringr)
 library(ggplot2)
+library(quantreg)
 
 ```
 
@@ -257,16 +258,14 @@ summaryfx(tib)
 #Plot Function
 
 ```{r}
-plotfx <- function(tib, numvars = "GASP", charvars = "SEX_fac"){
+plotfx <- function(tib, numvars = "", charvars = ""){
 
-plot <- ggplot(tib,
+ggplot(tib,
 aes(x = get(charvars), y = get(numvars), weight = PWGTP)) +
 geom_boxplot()
-  
-print(plot)
 }
 
-plotfx(tib,numvars = "GASP",charvars = "SEX_fac")
+plotfx(tib,numvars = "FER",charvars = "HHL_fac")
 
 ```
 
