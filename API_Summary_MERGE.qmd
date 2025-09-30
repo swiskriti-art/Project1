@@ -177,7 +177,7 @@ get_data <- function(year=2022, num_vars= c("PWGTP", "AGEP"),
 # Getting the data
 ```{r}
 dt_tbl <- get_data(num_vars = c("PWGTP", "GASP", "JWAP"), cat_vars = c("SEX","FER", "HHL"),
-                   geo = "State", geo_filter = "01")
+                   geo = "State", geo_filter = "10")
 dt_tbl
 ```
 
@@ -258,22 +258,31 @@ summaryfx(tib)
 # Plot Function
 
 ```{r}
-plotfx <- function(tib, numvars = "", charvars = ""){
+plotfx <- function(tib, numvars = "GASP", charvars = "SEX_fac"){
     #check one variable listed in numvars and charvars
   if(length(numvars) > 1 | length(charvars) >1){
     stop("Only one variable allowed")
   }
+  
+  
 
 ggplot(tib,
 aes(x = get(charvars), y = get(numvars), weight = PWGTP)) +
-geom_boxplot()
+geom_boxplot() +
+  #labs method from O'Reilly R for Data Science
+  labs(
+    title = paste0(numvars," Values by ",charvars),
+    x=charvars, y = numvars)
 }
-
-plotfx(tib,numvars = c("FER"),charvars = "HHL_fac")
 
 ```
 
 
+```{r}
+#test plot function
+plotfx(tib,numvars = c("FER"),charvars = "SEX_fac")
+
+```
 
 
 
