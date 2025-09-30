@@ -13,6 +13,7 @@ library(httr)
 library(jsonlite)
 library(tidyverse)
 library(stringr)
+library(ggplot2)
 
 ```
 
@@ -233,27 +234,41 @@ summaryfx <- function(tib, numvars = c("GASP","JWAP","FER"), charvars = c("SEX_f
     
     
     # passing [,charvars] creates multi-way contingency tables - using for loop to create multiple one-way 
+    catsumry <- list()
     for (i in charvars){
-    catsum <- tib |>
+    print( tib |>
               group_by(tib[,i]) |>
               summarise(
                 count = sum(PWGTP)
-                        ) 
-    print(catsum)
+                        )
+    )
   }
-    
-    
 }
 
 summaryfx(tib)
-#summaryfx(tib, numvars = c("GASP","JWAP"))
+#summaryfx(tib, numvars = c("GASP","JWAP"), charvars = "HHL_fac")
 
 #summaryfx(tib, charvars = "key")
+
 
 ```
 
 
+#Plot Function
 
+```{r}
+plotfx <- function(tib, numvars = "GASP", charvars = "SEX_fac"){
+
+plot <- ggplot(tib,
+aes(x = get(charvars), y = get(numvars), weight = PWGTP)) +
+geom_boxplot()
+  
+print(plot)
+}
+
+plotfx(tib,numvars = "GASP",charvars = "SEX_fac")
+
+```
 
 
 
