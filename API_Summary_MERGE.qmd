@@ -255,17 +255,21 @@ summaryfx(tib)
 ```
 
 
-#Plot Function
+# Plot Function
 
 ```{r}
 plotfx <- function(tib, numvars = "", charvars = ""){
+    #check one variable listed in numvars and charvars
+  if(length(numvars) > 1 | length(charvars) >1){
+    stop("Only one variable allowed")
+  }
 
 ggplot(tib,
 aes(x = get(charvars), y = get(numvars), weight = PWGTP)) +
 geom_boxplot()
 }
 
-plotfx(tib,numvars = "FER",charvars = "HHL_fac")
+plotfx(tib,numvars = c("FER"),charvars = "HHL_fac")
 
 ```
 
