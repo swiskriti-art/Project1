@@ -269,10 +269,12 @@ plotfx <- function(tib, numvars = "GASP", charvars = "SEX_fac"){
 ggplot(tib,
 aes(x = get(charvars), y = get(numvars), weight = PWGTP)) +
 geom_boxplot() +
-  #labs method from O'Reilly R for Data Science
+  #labs and coord_flip method from O'Reilly R for Data Science
+  #wider plots easier for longer factor level values
   labs(
-    title = paste0(numvars," Values by ",charvars),
-    x=charvars, y = numvars)
+    title = paste0(numvars," Value Distribution by ",charvars),
+    x=charvars, y = numvars) +
+  coord_flip()
 }
 
 ```
@@ -280,7 +282,7 @@ geom_boxplot() +
 
 ```{r}
 #test plot function
-plotfx(tib,numvars = c("FER"),charvars = "SEX_fac")
+plotfx(tib,numvars = c("GASP"),charvars = "HHL_fac")
 
 ```
 
