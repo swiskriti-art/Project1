@@ -201,10 +201,14 @@ tib$GASP <- as.numeric(tib$GASP)
 tib$JWAP <- as.numeric(tib$JWAP)
 tib$FER <- as.numeric(tib$FER)
 
-#temporary hardcode of weighted columns -- change to loop later
+#hardcoded weighted columns -- want to change to loop
 tib$GASP_wgt <- tib$GASP * tib$PWGTP
 tib$JWAP_wgt <- tib$JWAP * tib$PWGTP
 tib$FER_wgt <- tib$FER * tib$PWGTP
+
+tib$GASP_sqwgt <- (tib$GASP^2) * tib$PWGTP
+tib$JWAP_sqwgt <- (tib$JWAP^2) * tib$PWGTP
+tib$FER_sqwgt <- (tib$FER^2) * tib$PWGTP
 
 
 summaryfx <- function(tib, numvars = c("GASP","JWAP","FER"), charvars = c("SEX_fac","HHL_fac","FER_fac")){
@@ -214,14 +218,21 @@ summaryfx <- function(tib, numvars = c("GASP","JWAP","FER"), charvars = c("SEX_f
   }
   
     #sum across weighted values then divide by total weight
-    wgtavg = sapply(tib[,paste0(numvars,"_wgt")],sum)/sum(tib$PWGTP)
+    wgtavg = sapply(tib[,paste0(numvars,"_wgt")],sum) / sum(tib$PWGTP)
+    
+    #weighted standard deviation formula per instructions
+    dnm = sum(tib$PWGTP) - (wgtavg^2)
+    num = sapply(tib[,paste0(numvars,"_sqwgt")],sum)
+    stddev = sqrt(num/dnm)
+    
     
                       
     names(wgtavg) <- str_replace(paste0(names(wgtavg)," Mean"),"_wgt","")
-    numlist <- list(wgtavg)
+    names(stddev) <- str_replace(paste0(names(stddev)," StdDev"),"_sqwgt","")
+    numlist <- list(wgtavg, stddev)
     print("Numeric Variable Summaries") 
     print(numlist)
-
+    
 }
 
 summaryfx(tib)
