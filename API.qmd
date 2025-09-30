@@ -990,34 +990,46 @@ names(jwap_map) <- c("258",
                     "229",
                     "231")
 ```
+Creating a list of JWAP, JWAP map
+
+```{r}
+time_lst <- list(jwap = jwap_map, jwdp = jwdp_map )
+```
+
 Function to get the mid point of the time range in JWDP and JWAP
 ```{r}
-mid_time <- function(time_str) {
-  parts <- str_split(time_str, " to ")
+mid_time <- Vectorize(function(colname, time_str) {
+  map_tm <- switch(colname,
+                   "JWAP"= jwap_map,
+                   "JWDP" = jwdp_map)
+  if(is.na(map_tm[time_str])) {
+    return(NA)
+  }
+  parts <- str_split(map_tm[time_str], " to ")
   
   mid <- hm(parts[[1]][1]) + ((hm(parts[[1]][2]) - hm(parts[[1]][1]))/2)
-  print(mid)
-  if(str_detect(time_str, "am")) {
-    ampm <- "am"
-  }else {
-    ampm <- "pm"
-  }
+  ampm = ifelse(str_detect(time_str, "am", "pm"))
   tm <- paste0(mid$hour,":",mid$minute," ",ampm)
   return(tm)
-}  
+})  
 ```
 Function to query PUMS API,
 ```{r}
 #num_vars: Numerical variable to be return 
 # cat_vars: categorical variable to be return
 get_data <- function(year=2022, num_vars= c("PWGTP", "AGEP"),
-                     cat_vars = c("SEX"), geo = "All", geo_filter = "*"){
+                     cat_vars = c("SEX"), geo = "All", 
+                     filter = list(num_filter="", cat_filter="", geo_filter="*")){
+                     #geo_filter = "*"){
   if (year < 2010 | year > 2022) {
     stop ("year needs to be 2010-2022")
-  } 
+  }
+  if(!is.vector(num_vars) | !is.vector(cat_vars)) {
+    stop("num_vars and cat_vars both need to be vectors")
+  }
   allowed_num <- c("PWGTP", "AGEP", "GASP", "GRPIP","JWAP", "JWDP", "JWMNP")
   allowed_cat <- c("FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL", "SEX")
-  
+
   diff <- setdiff(num_vars, allowed_num)
   if(length(diff) > 0){
     stop ("unknown variable(s) given in num_vars: ", diff)
@@ -1035,13 +1047,16 @@ get_data <- function(year=2022, num_vars= c("PWGTP", "AGEP"),
   }
   get_str <- ""
   if (geo != "All"){
-    geo_str <- paste0("&for=", geo, ":", geo_filter)
+    geo_str <- paste0("&for=", geo, ":", filter$geo_filter)
   }
   get_str <- paste0("pums?get=",
                    paste(num_vars, collapse = ","),
                    ",",
                    paste(cat_vars, collapse = ","),
-                   geo_str)
+                   geo_str,
+                   paste0("&", filter$num_filter),
+                   paste0("&", filter$cat_filter)
+                   )
   URL <- paste("https://api.census.gov/data", year,
                "acs/acs1", get_str,
                sep = "/",
@@ -1065,20 +1080,13 @@ get_data <- function(year=2022, num_vars= c("PWGTP", "AGEP"),
       mutate(!!ct := factor(!!sym(ct), levels = fac$levels, labels = fac$labels))
   }
   #Converting numerical variables' values to numbers
-  for(nm in num_vars) {
-    # get mid period for 
-    if(nm %in% c("JWAP","JWDP")) {
-      map_tm <- switch(nm,
-                "JWAP" = jwap_map,
-                "JWDP" = jwdp_map)
-      tbl <- tbl |>
-        mutate(!!nm := mid_time(map_tm[!!nm]))
-    }else{ 
-      tbl <- tbl |>
-        mutate(!!nm := as.numeric(!!sym(nm)))
-    }
-  }
-  
+  tbl <- tbl |>
+        mutate(across(setdiff(num_vars, c("JWAP", "JWDP")), as.numeric))
+
+  tbl <- tbl |>
+      mutate(across(starts_with("JW") & ends_with("P"),
+                  ~ mid_time(cur_column(), .x)))
+
   return(tbl)
 }
 
@@ -1086,7 +1094,7 @@ get_data <- function(year=2022, num_vars= c("PWGTP", "AGEP"),
 Getting the data
 ```{r}
 dt_tbl <- get_data(num_vars = c("PWGTP", "GASP", "JWAP"), cat_vars = c("SEX","FER", "HHL"),
-                   geo = "State", geo_filter = "01")
+                   geo = "State", filter = list(cat_filter="SCHL=24", num_filter="", geo_filter = "01"))
 dt_tbl
 ```
 
