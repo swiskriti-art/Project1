@@ -110,6 +110,23 @@ schl_factor <- list(levels = c("16",
                               "Some college, but less than 1 year",
                               "Grade 6"))
 ```
+Function to get the mid point of the time range in JWDP and JWAP
+```{r}
+mid_time <- function(time_str) {
+  if(is.na(time_str)) {
+    return(NA)
+  }
+  parts <- str_split(time_str, " to ")
+  t1 <- hm(parts[[1]][1]) 
+  diff <- hm(parts[[1]][2]) - t1
+  
+  t1$minute <- t1$minute + (diff$minute %/% 2)
+  if(str_detect(time_str, "p.m.")) {
+    t1 <- t1 + hm("12:00")
+  }
+  return(as.character(t1))
+}  
+```
 Time mappings for JWDP and JWAP
 ```{r}
 jwdp_map <- c("4:10 a.m. to 4:19 a.m.",
@@ -148,7 +165,7 @@ jwdp_map <- c("4:10 a.m. to 4:19 a.m.",
               "4:10 p.m. to 4:19 p.m.",
               "6:10 p.m. to 6:19 p.m.",
               "11:30 p.m. to 11:59 p.m.",
-               NA, 
+               NA_character_, 
               "3:30 a.m. to 3:39 a.m.",
               "3:40 a.m. to 3:49 a.m.",
               "5:00 a.m. to 5:04 a.m.",
@@ -628,7 +645,7 @@ jwap_map <- c("9:40 p.m. to 9:44 p.m.",
               "11:30 p.m. to 11:34 p.m.",
               "11:35 p.m. to 11:39 p.m.",
               "11:40 p.m. to 11:44 p.m.",
-              NA, 
+              NA_character_ , 
               "12:10 a.m. to 12:14 a.m.",
               "12:50 a.m. to 12:59 a.m.",
               "3:20 a.m. to 3:24 a.m.",
@@ -989,30 +1006,17 @@ names(jwap_map) <- c("258",
                     "213",
                     "229",
                     "231")
+
 ```
 Creating a list of JWAP, JWAP map
 
 ```{r}
-time_lst <- list(jwap = jwap_map, jwdp = jwdp_map )
+#time_lst <- list(jwap = jwap_map, jwdp = jwdp_map)
+jwap_map <- sapply(jwap_map, mid_time)
+jwdp_map <- sapply(jwdp_map, mid_time)
+
 ```
 
-Function to get the mid point of the time range in JWDP and JWAP
-```{r}
-mid_time <- Vectorize(function(colname, time_str) {
-  map_tm <- switch(colname,
-                   "JWAP"= jwap_map,
-                   "JWDP" = jwdp_map)
-  if(is.na(map_tm[time_str])) {
-    return(NA)
-  }
-  parts <- str_split(map_tm[time_str], " to ")
-  
-  mid <- hm(parts[[1]][1]) + ((hm(parts[[1]][2]) - hm(parts[[1]][1]))/2)
-  ampm = ifelse(str_detect(time_str, "am", "pm"))
-  tm <- paste0(mid$hour,":",mid$minute," ",ampm)
-  return(tm)
-})  
-```
 Function to query PUMS API,
 ```{r}
 #num_vars: Numerical variable to be return 
@@ -1020,7 +1024,6 @@ Function to query PUMS API,
 get_data <- function(year=2022, num_vars= c("PWGTP", "AGEP"),
                      cat_vars = c("SEX"), geo = "All", 
                      filter = list(num_filter="", cat_filter="", geo_filter="*")){
-                     #geo_filter = "*"){
   if (year < 2010 | year > 2022) {
     stop ("year needs to be 2010-2022")
   }
@@ -1074,27 +1077,56 @@ get_data <- function(year=2022, num_vars= c("PWGTP", "AGEP"),
            "JWTRNS" = jwtrns_factor,
            "SCH" = sch_factor,
            "SCHL" = schl_factor)
-    print(fac)
     # For using column names from a variable need to use !! and !!sym() for use inside factor
     tbl <- tbl |>
       mutate(!!ct := factor(!!sym(ct), levels = fac$levels, labels = fac$labels))
   }
-  #Converting numerical variables' values to numbers
+  #Converting numerical variables' values to numbers and converting time rage vars to mid time
   tbl <- tbl |>
-        mutate(across(setdiff(num_vars, c("JWAP", "JWDP")), as.numeric))
-
-  tbl <- tbl |>
-      mutate(across(starts_with("JW") & ends_with("P"),
-                  ~ mid_time(cur_column(), .x)))
-
+        mutate(across(setdiff(num_vars, c("JWAP", "JWDP")), as.numeric),
+               across(starts_with("JW") & ends_with("P"), 
+                      ~ifelse(cur_column() == "JWAP", jwap_map[.], jwdp_map[.])
+                      ))
   return(tbl)
 }
+```
+Function to get data from multiple years as one tibble
+```{r}
+get_data_years <- function(years, num_vars= c("PWGTP", "AGEP"),
+                     cat_vars = c("SEX"), geo = "All", 
+                     filter = list(num_filter="", cat_filter="", geo_filter="*")){
+  if(!is.vector(years) | !is.numeric(years)) {
+    stop("years needs to be a numeric vector")
+  }
+  combined_dt <- NULL
+  for (y in years) {
+    if (y < 2010 | y > 2022) {
+      stop ("year needs to be 2010-2022")
+    }
+    dt <- get_data(year = y, num_vars = num_vars, cat_vars=cat_vars,
+                           geo = geo, filter =filter)
+    #Adding year in mutate 
+    dt <- dt |>
+      mutate(year=y)
+    combined_dt <- bind_rows(combined_dt, dt)
+  }
+  return(combined_dt)
+
+}
+
+#get_data_years(years=c(2021,2022), )
 
 ```
+
+
+
 Getting the data
 ```{r}
-dt_tbl <- get_data(num_vars = c("PWGTP", "GASP", "JWAP"), cat_vars = c("SEX","FER", "HHL"),
-                   geo = "State", filter = list(cat_filter="SCHL=24", num_filter="", geo_filter = "01"))
+dt_tbl <- get_data_years(years=c(2021, 2022), 
+                         num_vars = c("PWGTP", "GASP", "JWAP", "JWDP"),
+                         cat_vars = c("SEX","FER", "HHL"),
+                         geo = "State",
+                         filter = list(cat_filter="SCHL=24", num_filter="", geo_filter = "1"))
 dt_tbl
 ```
 
