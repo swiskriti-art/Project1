@@ -1,0 +1,12 @@
+Introduction: To be an effective administrator or researcher of a population requires a deep
+understanding of the population and the ability to quantify and measure its various aspects. 
+The United States Census Bureau hosts a wealth of information related to the country's demographics,
+quality of life, and economic factors. So much data is available, at such different levels, that the 
+data can be a challenge to obtain and analyze. The purpose of this project was to build tools that serve
+three main purposes: 
+
+1) Write an API query function to select and neatly organize data from the American Community Survey (ACS1) - Public Use Microdata ("PUMS") dataset, 
+allowing the user to specify specific data elements they want returned for different survey years. 
+2) Write a function allowing the user to find mean and standard deviation values for numeric values and counts for character variables. 
+3) Similarly, write a function that allows the user to observe response distributions for a numeric variable across levels of a character variable. 
+
