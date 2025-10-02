@@ -1032,10 +1032,9 @@ names(jwap_map) <- c("258",
 
 ```
 
-## Creating a list of JWAP, JWAP map
+## Get mid time for the JWAP, JWAP time range
 
 ```{r}
-#time_lst <- list(jwap = jwap_map, jwdp = jwdp_map)
 jwap_map <- sapply(jwap_map, mid_time)
 jwdp_map <- sapply(jwdp_map, mid_time)
 
@@ -1044,8 +1043,11 @@ jwdp_map <- sapply(jwdp_map, mid_time)
 # Function to query PUMS API
 
 ```{r}
-#num_vars: Numerical variable to be return 
+# Get data for a year from the PUMS API based on the variables given
+# num_vars: Numerical variable to be return 
 # cat_vars: categorical variable to be return
+# geo: geography
+# filter: list of numeric var filter, categorical var filter, and geography filter
 get_data <- function(year=2022, num_vars= c("PWGTP", "AGEP"),
                      cat_vars = c("SEX"), geo = "All", 
                      filter = list(num_filter="", cat_filter="", geo_filter="*")){
@@ -1141,18 +1143,17 @@ get_data_years <- function(years, num_vars= c("PWGTP", "AGEP"),
 
 }
 
-#get_data_years(years=c(2021,2022), )
-
 ```
 
 ## Getting the data
 
 ```{r}
+# Get data for years 2021, 2022 as one tibble
 dt_tbl <- get_data_years(years=c(2021, 2022), 
                          num_vars = c("PWGTP", "AGEP", "GASP", "GRPIP","JWMNP"),
                          cat_vars = c("FER", "HHL", "HISPEED","SCH", "SCHL", "SEX"),
                          geo = "State",
-                         filter = list(cat_filter="SCHL=24", num_filter="", geo_filter = "1"))
+                         filter = list(cat_filter="SCHL=24", num_filter="", geo_filter = "10"))
 dt_tbl
 ```
 
