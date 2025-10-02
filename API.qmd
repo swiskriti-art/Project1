@@ -17,7 +17,7 @@ library(stringr)
 
 ```
 
-Helper function to parse the return data from `Get` of a URL
+Helper function to parse the return data from `Get` of a URL. This function extracts the return data's content. The json content is then parsed into a matrix
 ```{r}
 # Function to get the data from a url
 # url should contain all the parameters 
@@ -1083,10 +1083,12 @@ get_data <- function(year=2022, num_vars= c("PWGTP", "AGEP"),
   }
   #Converting numerical variables' values to numbers and converting time rage vars to mid time
   tbl <- tbl |>
-        mutate(across(setdiff(num_vars, c("JWAP", "JWDP")), as.numeric),
-               across(starts_with("JW") & ends_with("P"), 
-                      ~ifelse(cur_column() == "JWAP", jwap_map[.], jwdp_map[.])
+        mutate(across(setdiff(num_vars, c("JWAP", "JWDP")), as.numeric))
+  tbl <- tbl |>
+    mutate(across(starts_with("JW") & ends_with("P"), 
+                      ~ifelse(cur_column() == "JWDP", jwdp_map[.], jwap_map[.])
                       ))
+  
   return(tbl)
 }
 ```
@@ -1117,16 +1119,17 @@ get_data_years <- function(years, num_vars= c("PWGTP", "AGEP"),
 #get_data_years(years=c(2021,2022), )
 
 ```
-
-
-
-Getting the data
+Getting the data with a cat filter and some num_vars with multiple years
 ```{r}
-dt_tbl <- get_data_years(years=c(2021, 2022), 
+dt_tbl <- get_data_years(years=c(2021, 2022, 2010), 
                          num_vars = c("PWGTP", "GASP", "JWAP", "JWDP"),
                          cat_vars = c("SEX","FER", "HHL"),
                          geo = "State",
                          filter = list(cat_filter="SCHL=24", num_filter="", geo_filter = "1"))
-dt_tbl
+dt_tbl |>
+  view()
 ```
+
+
+
 
